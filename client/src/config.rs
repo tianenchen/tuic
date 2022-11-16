@@ -41,6 +41,29 @@ pub struct Config {
     pub socks5_auth: Arc<dyn Auth + Send + Sync>,
     pub log_level: LevelFilter,
 }
+#[cfg(feature = "insecure")]
+mod insecure {
+    use rustls::{
+        client::{ServerCertVerified, ServerCertVerifier},
+        Certificate,
+    };
+
+    pub(crate) struct NoCertificateVerification {}
+
+    impl ServerCertVerifier for NoCertificateVerification {
+        fn verify_server_cert(
+            &self,
+            _end_entity: &Certificate,
+            _intermediates: &[Certificate],
+            _server_name: &rustls::ServerName,
+            _scts: &mut dyn Iterator<Item = &[u8]>,
+            _ocsp_response: &[u8],
+            _now: std::time::SystemTime,
+        ) -> Result<rustls::client::ServerCertVerified, rustls::Error> {
+            Ok(ServerCertVerified::assertion())
+        }
+    }
+}
 
 impl Config {
     pub fn parse(args: ArgsOs) -> Result<Self, ConfigError> {
@@ -56,6 +79,11 @@ impl Config {
                 .unwrap()
                 .with_root_certificates(certs)
                 .with_no_client_auth();
+
+            #[cfg(feature = "insecure")]
+            crypto
+                .dangerous()
+                .set_certificate_verifier(Arc::new(insecure::NoCertificateVerification {}));
 
             crypto.alpn_protocols = raw
                 .relay

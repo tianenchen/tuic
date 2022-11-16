@@ -11,6 +11,9 @@ readme = "../README.md"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/EAimTY/tuic"
 
+[features]
+insecure = ["rustls/dangerous_configuration"]
+
 [dependencies]
 tuic-protocol = { path="../protocol" }
 
