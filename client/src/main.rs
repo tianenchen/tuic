@@ -6,7 +6,7 @@ mod config;
 mod relay;
 mod socks5;
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() {
     let args = env::args_os();
 
